@@ -1,0 +1,29 @@
+name: Build Quake iOS
+on: 
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build App
+        run: |
+          xcodebuild -project "Quake/Quake.xcodeproj" \
+                     -scheme "Quake-iOS" \
+                     -configuration Release \
+                     -sdk iphoneos \
+                     -derivedDataPath build \
+                     CODE_SIGNING_ALLOWED=NO \
+                     CODE_SIGNING_REQUIRED=NO \
+                     clean build
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Quake-iOS-Binary
+          path: build/Build/Products/Release-iphoneos/*.app
