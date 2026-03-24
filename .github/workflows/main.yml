@@ -1,0 +1,27 @@
+name: Build iOS Quake
+on: [push, workflow_dispatch] # Roda quando você envia código ou clica em um botão
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Select Xcode Version
+        run: sudo xcode-select -s /Applications/Xcode_15.2.app
+
+      - name: Build App
+        run: |
+          xcodebuild -project "Quake/Quake.xcodeproj" \
+                     -scheme "Quake-iOS" \
+                     -configuration Release \
+                     -sdk iphoneos \
+                     CODE_SIGNING_ALLOWED=NO \
+                     clean build
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Quake-iOS-Build
+          path: build/Release-iphoneos/*.app
