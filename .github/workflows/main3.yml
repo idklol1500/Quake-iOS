@@ -1,5 +1,5 @@
 name: Build Quake iOS
-on: 
+on:
   workflow_dispatch:
 
 jobs:
@@ -9,9 +9,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          submodules:     
-                - name: Build App
-       run: |
+          submodules: recursive
+
+      - name: Build App
+        run: |
           xcodebuild -project "Quake/Quake.xcodeproj" \
                      -scheme "Quake-iOS" \
                      -configuration Release \
@@ -20,6 +21,7 @@ jobs:
                      CODE_SIGNING_ALLOWED=NO \
                      CODE_SIGNING_REQUIRED=NO \
                      clean build
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
