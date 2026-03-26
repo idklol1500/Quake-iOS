@@ -17,31 +17,32 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Hack the Mac File System
+      - name: Prepare File System
         run: |
-          # Recria o ambiente exato do computador do desenvolvedor original
+          # Cria absolutamente todas as pastas que o código pode pedir
           sudo mkdir -p /Applications/Quake/id1
           sudo mkdir -p /Applications/Quake/rogue
           sudo mkdir -p /Applications/Quake/hipnotic
+          sudo mkdir -p /Applications/Quake/dopa
+          sudo mkdir -p /Applications/Quake/music
           
-          # Dá permissão total para o nosso build ler essas pastas
+          # Garante que o build tenha acesso total
           sudo chmod -R 777 /Applications/Quake
 
       - name: Find and Build
         run: |
-          # Encontra o projeto e a pasta correta
+          # Localiza o projeto automaticamente
           PROJ_PATH=$(find . -name "*.xcodeproj" -print -quit)
           PROJ_DIR=$(dirname "$PROJ_PATH")
           PROJ_FILE=$(basename "$PROJ_PATH")
           
           cd "$PROJ_DIR"
           
-          # Descobre o Scheme automaticamente
+          # Detecta o Scheme correto (ex: Quake-iOS)
           SCHEME_NAME=$(xcodebuild -list -project "$PROJ_FILE" | grep -A 1 "Schemes:" | tail -n 1 | xargs)
           
-          echo "Compilando: $PROJ_FILE com Scheme: $SCHEME_NAME"
+          echo "Iniciando compilação do Scheme: $SCHEME_NAME"
 
-          # Compila o jogo
           xcodebuild archive \
             -project "$PROJ_FILE" \
             -scheme "$SCHEME_NAME" \
@@ -55,9 +56,10 @@ jobs:
       - name: Zip for Download
         if: always()
         run: |
+          # Procura o arquivo xcarchive e o transforma em ZIP para você baixar
           find . -name "*.xcarchive" -exec zip -r Quake_Ready.zip {} +
 
-      - name: Artifact
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Quake-iOS-Build
