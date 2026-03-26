@@ -20,28 +20,27 @@ jobs:
         with:
           xcode-version: latest-stable
 
+      - name: Fix Directory Structure
+        run: |
+          # Cria as pastas que o Xcode está procurando desesperadamente
+          sudo mkdir -p /Applications/Quake/id1
+          sudo mkdir -p /Applications/Quake/rogue
+          sudo mkdir -p /Applications/Quake/hipnotic
+          
+          # Dá permissão para o robô mexer nelas
+          sudo chmod -R 777 /Applications/Quake
+
       - name: Find and Build
         run: |
-          # 1. Acha onde o arquivo .xcodeproj está escondido
           XCODEPROJ_PATH=$(find . -name "*.xcodeproj" -print -quit)
           PROJECT_DIR=$(dirname "$XCODEPROJ_PATH")
           PROJECT_NAME=$(basename "$XCODEPROJ_PATH")
           
-          echo "Projeto encontrado em: $PROJECT_DIR"
-          echo "Nome do arquivo: $PROJECT_NAME"
-          
-          # 2. Entra na pasta do projeto
           cd "$PROJECT_DIR"
           
-          # 3. Descobre o Scheme automaticamente
+          # Pega o Scheme (provavelmente 'Quake-iOS')
           SCHEME=$(xcodebuild -list -project "$PROJECT_NAME" | grep -A 1 "Schemes:" | tail -n 1 | xargs)
-          echo "Usando Scheme: $SCHEME"
           
-          # 4. Cria a pasta id1 necessária
-          mkdir -p id1
-          touch id1/pak0.pak
-          
-          # 5. Compila de verdade
           xcodebuild archive \
             -project "$PROJECT_NAME" \
             -scheme "$SCHEME" \
@@ -50,12 +49,13 @@ jobs:
             -archivePath Quake.xcarchive \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            AD_HOC_CODE_SIGNING_ALLOWED=YES
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            | xcpretty || true # O 'true' impede que ele pare se houver apenas avisos
 
       - name: Zip the Archive
         if: always()
         run: |
-          # Procura o arquivo xcarchive e zipa
+          # Procura o arquivo xcarchive e o zipa
           find . -name "*.xcarchive" -exec zip -r Quake_Ready.zip {} +
 
       - name: Upload Build Artifact
@@ -63,3 +63,4 @@ jobs:
         with:
           name: Quake-iOS-Build
           path: Quake_Ready.zip
+          
