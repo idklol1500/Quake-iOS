@@ -27,9 +27,15 @@ jobs:
 
       - name: Build for iOS
         run: |
+          # Detecta o arquivo .xcodeproj e o primeiro Scheme disponível
+          PROJECT=$(ls -d *.xcodeproj | head -n 1)
+          SCHEME=$(xcodebuild -list -project "$PROJECT" | grep -A 1 "Schemes:" | tail -n 1 | xargs)
+          
+          echo "Compilando Projeto: $PROJECT com Scheme: $SCHEME"
+          
           xcodebuild archive \
-            -project Quake.xcodeproj \
-            -scheme Quake \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
             -sdk iphoneos \
             -configuration Release \
             -archivePath Quake.xcarchive \
