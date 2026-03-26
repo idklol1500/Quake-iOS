@@ -28,26 +28,25 @@ jobs:
       - name: Build for iOS
         working-directory: ios
         run: |
-          # Detecta o arquivo de projeto dentro da pasta ios
-          PROJECT=$(ls -d *.xcodeproj | head -n 1)
-          # Pega o primeiro Scheme disponível
-          SCHEME=$(xcodebuild -list -project "$PROJECT" | grep -A 1 "Schemes:" | tail -n 1 | xargs)
+          # Limpa o build anterior para evitar conflitos
+          xcodebuild clean -project Quake.xcodeproj -configuration Release
           
-          echo "Compilando: $PROJECT com Scheme: $SCHEME"
-          
+          # Tenta compilar o arquivo de projeto diretamente
           xcodebuild archive \
-            -project "$PROJECT" \
-            -scheme "$SCHEME" \
+            -project Quake.xcodeproj \
+            -scheme "Quake" \
             -sdk iphoneos \
             -configuration Release \
             -archivePath Quake.xcarchive \
             CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO
+            CODE_SIGNING_REQUIRED=NO \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES
 
       - name: Zip the Archive
-        working-directory: ios
+        if: always()
         run: |
-          zip -r ../Quake_Ready.zip Quake.xcarchive
+          # Procura o arquivo xcarchive onde quer que ele tenha sido criado
+          find . -name "*.xcarchive" -exec zip -r Quake_Ready.zip {} +
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
