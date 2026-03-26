@@ -26,15 +26,11 @@ jobs:
           touch ios/id1/pak0.pak
 
       - name: Build for iOS
-        working-directory: ios
         run: |
-          # Limpa o build anterior para evitar conflitos
-          xcodebuild clean -project Quake.xcodeproj -configuration Release
-          
-          # Tenta compilar o arquivo de projeto diretamente
+          cd ios
           xcodebuild archive \
             -project Quake.xcodeproj \
-            -scheme "Quake" \
+            -scheme Quake \
             -sdk iphoneos \
             -configuration Release \
             -archivePath Quake.xcarchive \
@@ -45,7 +41,7 @@ jobs:
       - name: Zip the Archive
         if: always()
         run: |
-          # Procura o arquivo xcarchive onde quer que ele tenha sido criado
+          # Procura o arquivo xcarchive e o zipa na raiz
           find . -name "*.xcarchive" -exec zip -r Quake_Ready.zip {} +
 
       - name: Upload Build Artifact
