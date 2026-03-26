@@ -22,16 +22,18 @@ jobs:
 
       - name: Create dummy pak file
         run: |
-          mkdir -p id1
-          touch id1/pak0.pak
+          mkdir -p ios/id1
+          touch ios/id1/pak0.pak
 
       - name: Build for iOS
+        working-directory: ios
         run: |
-          # Detecta o arquivo .xcodeproj e o primeiro Scheme disponível
+          # Detecta o arquivo de projeto dentro da pasta ios
           PROJECT=$(ls -d *.xcodeproj | head -n 1)
+          # Pega o primeiro Scheme disponível
           SCHEME=$(xcodebuild -list -project "$PROJECT" | grep -A 1 "Schemes:" | tail -n 1 | xargs)
           
-          echo "Compilando Projeto: $PROJECT com Scheme: $SCHEME"
+          echo "Compilando: $PROJECT com Scheme: $SCHEME"
           
           xcodebuild archive \
             -project "$PROJECT" \
@@ -43,8 +45,9 @@ jobs:
             CODE_SIGNING_REQUIRED=NO
 
       - name: Zip the Archive
+        working-directory: ios
         run: |
-          zip -r Quake_Ready.zip Quake.xcarchive
+          zip -r ../Quake_Ready.zip Quake.xcarchive
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
