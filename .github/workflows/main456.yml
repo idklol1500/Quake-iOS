@@ -17,29 +17,31 @@ jobs:
         with:
           xcode-version: latest-stable
 
+      - name: Hack the Mac File System
+        run: |
+          # Recria o ambiente exato do computador do desenvolvedor original
+          sudo mkdir -p /Applications/Quake/id1
+          sudo mkdir -p /Applications/Quake/rogue
+          sudo mkdir -p /Applications/Quake/hipnotic
+          
+          # Dá permissão total para o nosso build ler essas pastas
+          sudo chmod -R 777 /Applications/Quake
+
       - name: Find and Build
         run: |
-          # 1. Acha o arquivo .xcodeproj em qualquer lugar do repositório
+          # Encontra o projeto e a pasta correta
           PROJ_PATH=$(find . -name "*.xcodeproj" -print -quit)
           PROJ_DIR=$(dirname "$PROJ_PATH")
           PROJ_FILE=$(basename "$PROJ_PATH")
           
-          if [ -z "$PROJ_PATH" ]; then
-            echo "ERRO: Nenhum arquivo .xcodeproj encontrado!"
-            exit 1
-          fi
-          
-          echo "Projeto encontrado em: $PROJ_DIR"
           cd "$PROJ_DIR"
           
-          # 2. Descobre o Scheme real (evita o erro 65)
+          # Descobre o Scheme automaticamente
           SCHEME_NAME=$(xcodebuild -list -project "$PROJ_FILE" | grep -A 1 "Schemes:" | tail -n 1 | xargs)
-          echo "Scheme detectado: $SCHEME_NAME"
+          
+          echo "Compilando: $PROJ_FILE com Scheme: $SCHEME_NAME"
 
-          # 3. Cria pastas necessárias para não dar erro de arquivo faltando
-          mkdir -p id1 rogue hipnotic
-
-          # 4. Compila
+          # Compila o jogo
           xcodebuild archive \
             -project "$PROJ_FILE" \
             -scheme "$SCHEME_NAME" \
@@ -53,7 +55,6 @@ jobs:
       - name: Zip for Download
         if: always()
         run: |
-          # Procura o arquivo gerado e zipa na raiz para o upload
           find . -name "*.xcarchive" -exec zip -r Quake_Ready.zip {} +
 
       - name: Artifact
