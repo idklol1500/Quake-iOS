@@ -20,17 +20,31 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Create dummy pak file
+      - name: Find and Build
         run: |
-          mkdir -p ios/id1
-          touch ios/id1/pak0.pak
-
-      - name: Build for iOS
-        run: |
-          cd ios
+          # 1. Acha onde o arquivo .xcodeproj está escondido
+          XCODEPROJ_PATH=$(find . -name "*.xcodeproj" -print -quit)
+          PROJECT_DIR=$(dirname "$XCODEPROJ_PATH")
+          PROJECT_NAME=$(basename "$XCODEPROJ_PATH")
+          
+          echo "Projeto encontrado em: $PROJECT_DIR"
+          echo "Nome do arquivo: $PROJECT_NAME"
+          
+          # 2. Entra na pasta do projeto
+          cd "$PROJECT_DIR"
+          
+          # 3. Descobre o Scheme automaticamente
+          SCHEME=$(xcodebuild -list -project "$PROJECT_NAME" | grep -A 1 "Schemes:" | tail -n 1 | xargs)
+          echo "Usando Scheme: $SCHEME"
+          
+          # 4. Cria a pasta id1 necessária
+          mkdir -p id1
+          touch id1/pak0.pak
+          
+          # 5. Compila de verdade
           xcodebuild archive \
-            -project Quake.xcodeproj \
-            -scheme Quake \
+            -project "$PROJECT_NAME" \
+            -scheme "$SCHEME" \
             -sdk iphoneos \
             -configuration Release \
             -archivePath Quake.xcarchive \
@@ -41,7 +55,7 @@ jobs:
       - name: Zip the Archive
         if: always()
         run: |
-          # Procura o arquivo xcarchive e o zipa na raiz
+          # Procura o arquivo xcarchive e zipa
           find . -name "*.xcarchive" -exec zip -r Quake_Ready.zip {} +
 
       - name: Upload Build Artifact
