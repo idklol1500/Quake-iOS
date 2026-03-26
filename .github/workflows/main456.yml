@@ -38,3 +38,8 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             | xcpretty
+- name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Quake-iOS-Build
+          path: build/Quake.xcarchive
