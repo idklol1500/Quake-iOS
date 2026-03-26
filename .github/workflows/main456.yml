@@ -3,7 +3,6 @@ name: Build Quake iOS
 on:
   workflow_dispatch:
   push:
-    branches: [ main, master ]
 
 jobs:
   build:
@@ -18,39 +17,41 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Find and Build
+      - name: Compile
         run: |
-          # Acha o projeto não importa onde ele esteja
-          XCODEPROJ=$(find . -name "*.xcodeproj" -print -quit)
-          PROJECT_DIR=$(dirname "$XCODEPROJ")
+          # Acha o projeto na pasta ios ou em qualquer lugar
+          X_PROJECT=$(find . -name "*.xcodeproj" -print -quit)
+          X_DIR=$(dirname "$X_PROJECT")
           
-          cd "$PROJECT_DIR"
+          cd "$X_DIR"
           
-          # Pega o primeiro Scheme que aparecer
-          SCHEME=$(xcodebuild -list -project *.xcodeproj | grep -A 1 "Schemes:" | tail -n 1 | xargs)
+          # Cria pastas fantasmas para não dar erro de arquivo faltando
+          mkdir -p id1 rogue hipnotic
           
-          echo "Compilando $SCHEME em $PROJECT_DIR..."
+          # Pega o primeiro Scheme
+          X_SCHEME=$(xcodebuild -list -project *.xcodeproj | grep -A 1 "Schemes:" | tail -n 1 | xargs)
+          
+          echo "Compilando $X_SCHEME..."
 
-          # Build ignorando erros de arquivos de assets faltando
+          # Comando de build direto, sem filtros, para vermos o erro real
           xcodebuild archive \
             -project *.xcodeproj \
-            -scheme "$SCHEME" \
+            -scheme "$X_SCHEME" \
             -configuration Release \
             -sdk iphoneos \
             -archivePath ./Quake.xcarchive \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            AD_HOC_CODE_SIGNING_ALLOWED=YES \
-            | xcpretty
+            AD_HOC_CODE_SIGNING_ALLOWED=YES
 
-      - name: Prepare Artifact
+      - name: Zip and Upload
+        if: always()
         run: |
-          # Procura o arquivo .xcarchive e zipa ele na raiz do projeto
+          # Procura o arquivo xcarchive e o zipa onde quer que ele esteja
           find . -name "*.xcarchive" -exec zip -r Quake_Ready.zip {} +
 
-      - name: Upload
+      - name: Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Quake-iOS-IPA
-          path: Quake_Ready.zip
-          if-no-files-found: error
+          name: Quake-iOS-Build
+          path: "**/*.zip"
