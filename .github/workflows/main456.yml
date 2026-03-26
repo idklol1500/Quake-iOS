@@ -22,8 +22,6 @@ jobs:
 
       - name: Create dummy pak file
         run: |
-          # O build pode falhar se a pasta id1 estiver vazia. 
-          # Criamos um arquivo vazio apenas para o compilador não reclamar.
           mkdir -p id1
           touch id1/pak0.pak
 
@@ -38,7 +36,8 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             | xcpretty
-            - name: Upload Build Artifact
+
+      - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Quake-iOS-Build
