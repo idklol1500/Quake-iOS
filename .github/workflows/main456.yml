@@ -17,21 +17,21 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: List Schemes and Build
+      - name: Build and Detect Scheme
         run: |
-          # 1. Entra na pasta ios onde o projeto realmente está
+          # 1. Entra na pasta do projeto
           cd ios
           
-          # 2. Lista os schemes para o log (ajuda a gente a diagnosticar se falhar)
-          xcodebuild -list -project Quake.xcodeproj
+          # 2. Descobre o nome do projeto e o Scheme real
+          PROJ_FILE=$(ls -d *.xcodeproj | head -n 1)
+          SCHEME_NAME=$(xcodebuild -list -project "$PROJ_FILE" | grep -A 1 "Schemes:" | tail -n 1 | xargs)
           
-          # 3. Pega o primeiro nome de Scheme que aparecer na lista
-          SCHEME_NAME=$(xcodebuild -list -project Quake.xcodeproj | grep -A 1 "Schemes:" | tail -n 1 | xargs)
-          echo "O Scheme detectado foi: $SCHEME_NAME"
-          
-          # 4. Compila usando o nome detectado automaticamente
+          echo "Projeto encontrado: $PROJ_FILE"
+          echo "Scheme detectado: $SCHEME_NAME"
+
+          # 3. Compila usando os nomes que ele mesmo descobriu
           xcodebuild archive \
-            -project Quake.xcodeproj \
+            -project "$PROJ_FILE" \
             -scheme "$SCHEME_NAME" \
             -configuration Release \
             -sdk iphoneos \
@@ -40,10 +40,10 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             AD_HOC_CODE_SIGNING_ALLOWED=YES
 
-      - name: Zip and Upload
+      - name: Zip for Download
         if: always()
         run: |
-          # Procura o arquivo xcarchive (que é uma pasta) e transforma em ZIP
+          # Procura o arquivo xcarchive em qualquer lugar e zipa
           find . -name "*.xcarchive" -exec zip -r Quake_Ready.zip {} +
 
       - name: Artifact
