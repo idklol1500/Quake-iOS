@@ -1,11 +1,9 @@
 name: Build Quake iOS
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:
 
 jobs:
   build:
@@ -15,52 +13,44 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Xcode version
+      - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
 
-      - name: Fix Directory Structure
-        run: |
-          # Cria as pastas que o Xcode está procurando desesperadamente
-          sudo mkdir -p /Applications/Quake/id1
-          sudo mkdir -p /Applications/Quake/rogue
-          sudo mkdir -p /Applications/Quake/hipnotic
-          
-          # Dá permissão para o robô mexer nelas
-          sudo chmod -R 777 /Applications/Quake
-
       - name: Find and Build
         run: |
-          XCODEPROJ_PATH=$(find . -name "*.xcodeproj" -print -quit)
-          PROJECT_DIR=$(dirname "$XCODEPROJ_PATH")
-          PROJECT_NAME=$(basename "$XCODEPROJ_PATH")
+          # Acha o projeto não importa onde ele esteja
+          XCODEPROJ=$(find . -name "*.xcodeproj" -print -quit)
+          PROJECT_DIR=$(dirname "$XCODEPROJ")
           
           cd "$PROJECT_DIR"
           
-          # Pega o Scheme (provavelmente 'Quake-iOS')
-          SCHEME=$(xcodebuild -list -project "$PROJECT_NAME" | grep -A 1 "Schemes:" | tail -n 1 | xargs)
+          # Pega o primeiro Scheme que aparecer
+          SCHEME=$(xcodebuild -list -project *.xcodeproj | grep -A 1 "Schemes:" | tail -n 1 | xargs)
           
+          echo "Compilando $SCHEME em $PROJECT_DIR..."
+
+          # Build ignorando erros de arquivos de assets faltando
           xcodebuild archive \
-            -project "$PROJECT_NAME" \
+            -project *.xcodeproj \
             -scheme "$SCHEME" \
-            -sdk iphoneos \
             -configuration Release \
-            -archivePath Quake.xcarchive \
+            -sdk iphoneos \
+            -archivePath ./Quake.xcarchive \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             AD_HOC_CODE_SIGNING_ALLOWED=YES \
-            | xcpretty || true # O 'true' impede que ele pare se houver apenas avisos
+            | xcpretty
 
-      - name: Zip the Archive
-        if: always()
+      - name: Prepare Artifact
         run: |
-          # Procura o arquivo xcarchive e o zipa
+          # Procura o arquivo .xcarchive e zipa ele na raiz do projeto
           find . -name "*.xcarchive" -exec zip -r Quake_Ready.zip {} +
 
-      - name: Upload Build Artifact
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: Quake-iOS-Build
+          name: Quake-iOS-IPA
           path: Quake_Ready.zip
-          
+          if-no-files-found: error
